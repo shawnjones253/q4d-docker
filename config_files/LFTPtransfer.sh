@@ -50,19 +50,21 @@ function TransferPayload()
         umask 0
 
     # Try to grab as a directory
-        lftp -u ${CREDS} sftp://${HOST}/ -e "set xfer:use-temp-file yes; set xfer:temp-file-name '.lftp'; set net:limit-rate $RATE; $HOSTKEYFIX; mirror -c --parallel=$PARALLEL --use-pget-n=$SEGMENTS \"${_target}\" ;quit" >>/tmp/lftp$$.log 2>&1
-
+        lftp -u ${CREDS} sftp://${HOST}/  -e "$HOSTKEYFIX; mirror -c  --parallel=$THREADS --use-pget-n=$SEGMENTS \"${_target}\" ;quit" >>/tmp/fail$$.log 2>&1
 
         _transferred=$?
 
         if [[ $_transferred -ne 0 ]]
         then
         # Now as a file
-        lftp -u ${CREDS} sftp://${HOST}/ -e "set xfer:use-temp-file yes; set xfer:temp-file-name '.lftp'; set net:limit-rate $RATE; $HOSTKEYFIX; pget -n $SEGMENTS \"${_target}\" ;quit" >>/tmp/lftp$$.log 2>&1
+        lftp -u ${CREDS} sftp://${HOST}/  -e "$HOSTKEYFIX; pget -n $THREADS \"${_target}\" ;quit" >>/tmp/fail$$.log 2>&1
         _transferred=$?
         fi
 
-        chmod -R 777 $(basename "${_target}")
+        base=$(basename "${_target}")
+        echo base: "$base" . target: "${_target}"  >> $CLIENT_LOG
+        chmod -R 777 "$base"
+
 
         return ${_transferred}
 }
@@ -85,8 +87,6 @@ function ProcessResult()
         local _hash=$3
         local _event
 
-    if [[ $LABELLING -eq 0  && ${_hash} != "NotUsed" ]]
-    then
         if [[ ${_result} == 0 ]]
         then
             _label=$ACK
@@ -97,19 +97,21 @@ function ProcessResult()
                 cat /tmp/fail$$.log >> $CLIENT_LOG
         fi
 
-        _event=$(printf "%s\t%s\n" ${_hash} ${_label}  )
+        if [[ $LABELLING  && ${_hash} != "NotUsed" ]]
+        then
+           _event=$(printf "%s\t%s\n" ${_hash} ${_label}  )
 
-        PublishEvent ${LABEL_CHANNEL} "${_event}"
+           PublishEvent ${LABEL_CHANNEL} "${_event}"
 
-                if [[ $? ]]
-                then
-                        _pub="Succeeded"
-                else
-                        _pub="Failed"
-                fi
+           if [[ $? ]]
+           then
+                _pub="Succeeded"
+           else
+                _pub="Failed"
+           fi
 
                 echo $(date)": Publish of Label Event for ${_target} Set to ${_label} ${_pub}" >> $CLIENT_LOG
-    fi
+        fi
 
 }
 
