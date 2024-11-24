@@ -50,14 +50,14 @@ function TransferPayload()
         umask 0
 
     # Try to grab as a directory
-        lftp -u ${CREDS} sftp://${HOST}/  -e "$HOSTKEYFIX; mirror -c  --parallel=$THREADS --use-pget-n=$SEGMENTS \"${_target}\" ;quit" >>/tmp/fail$$.log 2>&1
+        lftp -u ${CREDS} sftp://${HOST}/  -e "set xfer:use-temp-file yes; set xfer:temp-file-name '.lftp'; $HOSTKEYFIX; mirror -c  --parallel=$THREADS --use-pget-n=$SEGMENTS \"${_target}\" ;quit" >>/tmp/fail$$.log 2>&1
 
         _transferred=$?
 
         if [[ $_transferred -ne 0 ]]
         then
         # Now as a file
-        lftp -u ${CREDS} sftp://${HOST}/  -e "$HOSTKEYFIX; pget -n $THREADS \"${_target}\" ;quit" >>/tmp/fail$$.log 2>&1
+        lftp -u ${CREDS} sftp://${HOST}/  -e "set xfer:use-temp-file yes; set xfer:temp-file-name '.lftp'; $HOSTKEYFIX; pget -n $THREADS \"${_target}\" ;quit" >>/tmp/fail$$.log 2>&1
         _transferred=$?
         fi
 
