@@ -25,7 +25,7 @@ This repository provides an unofficial Docker image for the client side of [Queu
     version: '3'
     services:
       Q4D:
-        image: ghcr.io/rj-d2/q4d-docker:latest
+        image: ghcr.io/shawnjones253/q4d-docker:latest
         container_name: q4d
         volumes:
           - /path/to/appdata:/root/.Q4D  # Persistent storage for Q4D config
